@@ -23,6 +23,7 @@ class AppState extends ChangeNotifier {
   List<Booking> bookings = [];
 
   Future<void> initialize() async {
+    await _createDemoAccountIfNeeded();
     isAuthenticated = box.get('authenticated') == 'true';
     hasSeenOnboarding = box.get('onboardingSeen') == 'true';
     isProviderMode = box.get('providerMode') == 'true';
@@ -40,8 +41,112 @@ class AppState extends ChangeNotifier {
           .map((e) => Booking.fromJson(e))
           .toList();
     }
+    await _addDemoBookingIfNeeded();
     categories = await repository.fetchCategories();
     notifyListeners();
+  }
+
+  Future<void> _createDemoAccountIfNeeded() async {
+    final accounts = _readAccounts();
+    if (accounts.isNotEmpty) return;
+
+    await box.putAll({
+      'userName': 'Ruvindu',
+      'userEmail': 'ruvindu@gmail.com',
+      'userPassword': 'dulaksha',
+      'authenticated': 'false',
+      'accounts': jsonEncode([
+        {
+          'name': 'Ruvindu',
+          'email': 'ruvindu@gmail.com',
+          'password': 'dulaksha',
+        },
+      ]),
+    });
+  }
+
+  List<Map<String, String>> _readAccounts() {
+    final raw = box.get('accounts');
+    if (raw == null) {
+      final email = box.get('userEmail');
+      final password = box.get('userPassword');
+      if (email == null ||
+          email.isEmpty ||
+          password == null ||
+          password.isEmpty) {
+        return [];
+      }
+      return [
+        {
+          'name': box.get('userName') ?? '',
+          'email': email,
+          'password': password,
+        },
+      ];
+    }
+    final decoded = jsonDecode(raw) as List;
+    return decoded
+        .map((item) => Map<String, String>.from(item as Map))
+        .toList();
+  }
+
+  Future<void> _saveAccounts(List<Map<String, String>> accounts) =>
+      box.put('accounts', jsonEncode(accounts));
+
+  Map<String, String>? _accountForEmail(String email) {
+    final normalizedEmail = email.trim().toLowerCase();
+    for (final account in _readAccounts()) {
+      if (account['email']!.toLowerCase() == normalizedEmail) return account;
+    }
+    return null;
+  }
+
+  Future<void> _addDemoBookingIfNeeded() async {
+    final demo = switch (userEmail.toLowerCase()) {
+      'ruvindu1@gmail.com' => (
+        id: 'FX-DEMO-RUVINDU1',
+        providerId: 'p002',
+        providerName: 'Nuwan Silva',
+        category: 'electrical',
+        description: 'Install and check the living room lights.',
+        total: 6500,
+      ),
+      'ruvindu2@gmail.com' => (
+        id: 'FX-DEMO-RUVINDU2',
+        providerId: 'p001',
+        providerName: 'Kamal Perera',
+        category: 'plumbing',
+        description: 'Repair a leaking kitchen pipe.',
+        total: 5500,
+      ),
+      _ => null,
+    };
+    if (demo == null || bookings.any((booking) => booking.id == demo.id)) {
+      return;
+    }
+
+    var bookingDate = DateTime.now().add(const Duration(days: 2));
+    while (bookingDate.weekday == DateTime.sunday) {
+      bookingDate = bookingDate.add(const Duration(days: 1));
+    }
+
+    final booking = Booking(
+      id: demo.id,
+      providerId: demo.providerId,
+      providerName: demo.providerName,
+      category: demo.category,
+      date: bookingDate,
+      slot: '10 AM–12 PM',
+      customerName: userName.isEmpty ? 'Ruvindu' : userName,
+      phone: '0712345678',
+      address: 'Colombo',
+      hours: 2,
+      description: demo.description,
+      total: demo.total,
+      status: BookingStatus.confirmed,
+    );
+    bookings = [...bookings, booking];
+    await _saveBookings();
   }
 
   Future<void> completeOnboarding() async {
@@ -51,19 +156,21 @@ class AppState extends ChangeNotifier {
   }
 
   Future<bool> login(String email, String password) async {
-    final savedEmail = box.get('userEmail') ?? '';
-    final savedPassword = box.get('userPassword') ?? '';
-    if (savedEmail.isEmpty ||
-        savedPassword.isEmpty ||
-        savedEmail.toLowerCase() != email.trim().toLowerCase() ||
-        savedPassword != password) {
+    final account = _accountForEmail(email);
+    if (account == null || account['password'] != password) {
       return false;
     }
-    userEmail = savedEmail;
-    userPassword = savedPassword;
-    userName = box.get('userName') ?? '';
+    userEmail = account['email']!;
+    userPassword = account['password']!;
+    userName = account['name']!;
     isAuthenticated = true;
-    await box.putAll({'authenticated': 'true'});
+    await box.putAll({
+      'authenticated': 'true',
+      'userName': userName,
+      'userEmail': userEmail,
+      'userPassword': userPassword,
+    });
+    await _addDemoBookingIfNeeded();
     notifyListeners();
     return true;
   }
@@ -73,16 +180,19 @@ class AppState extends ChangeNotifier {
     required String email,
     required String password,
   }) async {
-    final savedEmail = box.get('userEmail');
-    if (savedEmail != null &&
-        savedEmail.isNotEmpty &&
-        savedEmail.toLowerCase() == email.trim().toLowerCase() &&
-        (box.get('userPassword') ?? '').isNotEmpty) {
+    final accounts = _readAccounts();
+    if (_accountForEmail(email) != null) {
       return false;
     }
-    userName = name.trim();
-    userEmail = email.trim();
-    userPassword = password;
+    final account = {
+      'name': name.trim(),
+      'email': email.trim(),
+      'password': password,
+    };
+    await _saveAccounts([...accounts, account]);
+    userName = account['name']!;
+    userEmail = account['email']!;
+    userPassword = account['password']!;
     isAuthenticated = true;
     await box.putAll({
       'authenticated': 'true',
@@ -98,6 +208,13 @@ class AppState extends ChangeNotifier {
     required String name,
     required String email,
   }) async {
+    final accounts = _readAccounts();
+    final current = _accountForEmail(userEmail);
+    if (current != null) {
+      current['name'] = name;
+      current['email'] = email;
+      await _saveAccounts(accounts);
+    }
     userName = name;
     userEmail = email;
     await box.putAll({'userName': name, 'userEmail': email});
@@ -114,6 +231,12 @@ class AppState extends ChangeNotifier {
       return false;
     }
     userPassword = newPassword;
+    final accounts = _readAccounts();
+    final current = _accountForEmail(userEmail);
+    if (current != null) {
+      current['password'] = newPassword;
+      await _saveAccounts(accounts);
+    }
     await box.put('userPassword', newPassword);
     notifyListeners();
     return true;

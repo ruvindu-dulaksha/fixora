@@ -7,7 +7,6 @@ class ProviderDetailPage extends StatelessWidget {
   final ProviderProfile provider;
   @override
   Widget build(BuildContext context) {
-    final isOwnProviderProfile = provider.id == 'p001';
     return Scaffold(
       appBar: AppBar(title: const Text('Professional details')),
       body: ListView(
@@ -64,23 +63,18 @@ class ProviderDetailPage extends StatelessWidget {
                 .toList(),
           ),
           const SizedBox(height: 28),
-          if (isOwnProviderProfile)
-            const Text(
-              'This is your provider profile. You cannot book your own services.',
-            )
-          else
-            FilledButton.icon(
-              onPressed: provider.isAvailable
-                  ? () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => BookingPage(provider: provider),
-                      ),
-                    )
-                  : null,
-              icon: const Icon(Icons.calendar_month),
-              label: Text(provider.isAvailable ? 'Book now' : 'Currently busy'),
-            ),
+          FilledButton.icon(
+            onPressed: provider.isAvailable
+                ? () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => BookingPage(provider: provider),
+                    ),
+                  )
+                : null,
+            icon: const Icon(Icons.calendar_month),
+            label: Text(provider.isAvailable ? 'Book now' : 'Currently busy'),
+          ),
         ],
       ),
     );

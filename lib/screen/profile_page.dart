@@ -324,7 +324,9 @@ class ProfilePage extends StatelessWidget {
           const SizedBox(height: 16),
           SwitchListTile(
             title: const Text('Provider mode'),
-            subtitle: const Text('Manage jobs as Kamal Perera'),
+            subtitle: Text(
+              'Manage jobs as ${state.userName.isEmpty ? 'your profile' : state.userName}',
+            ),
             value: state.isProviderMode,
             onChanged: (_) => state.toggleMode(),
           ),
