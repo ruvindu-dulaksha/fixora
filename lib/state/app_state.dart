@@ -155,10 +155,14 @@ class AppState extends ChangeNotifier {
   }
 
   Future<List<ProviderProfile>> loadProviders({
+    int page = 1,
     String? categoryId,
     String query = '',
-  }) async =>
-      repository.fetchProviders(page: 1, categoryId: categoryId, query: query);
+  }) async => repository.fetchProviders(
+    page: page,
+    categoryId: categoryId,
+    query: query,
+  );
 
   bool isSlotFree(String providerId, DateTime date, String slot) =>
       isAvailableSlot(bookings, providerId, date, slot);

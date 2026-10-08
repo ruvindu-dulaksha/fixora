@@ -36,18 +36,32 @@ class AssetProviderRepository implements ProviderRepository {
     ];
   }
 
+  void _throwRandomFailure() {
+    final shouldFail = Random().nextDouble() < 0.2;
+    if (shouldFail) {
+      throw StateError(
+        "Unable to load provider right now. Please try again  later.",
+      );
+    }
+  }
+
   @override
   Future<List<ProviderProfile>> fetchProviders({
     required int page,
     String? categoryId,
     String query = '',
   }) async {
-    await Future<void>.delayed(Duration(milliseconds: 800 + Random().nextInt(700)));
+    await Future<void>.delayed(
+      Duration(milliseconds: 800 + Random().nextInt(700)),
+    );
+    _throwRandomFailure();
     await _load();
     final lower = query.toLowerCase();
     final filtered = _providers!.where((provider) {
-      final categoryMatches = categoryId == null || provider.categoryId == categoryId;
-      final queryMatches = lower.isEmpty ||
+      final categoryMatches =
+          categoryId == null || provider.categoryId == categoryId;
+      final queryMatches =
+          lower.isEmpty ||
           provider.name.toLowerCase().contains(lower) ||
           provider.skills.any((skill) => skill.toLowerCase().contains(lower));
       return categoryMatches && queryMatches;
