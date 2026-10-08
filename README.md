@@ -1,42 +1,54 @@
 # Fixora
 
-Fixora is a Flutter app for finding local home service professionals and booking services.
+Fixora is a Flutter handyman service booking app. Customers can find local service providers, book services, and manage their bookings. Provider mode is included for managing jobs assigned to Kamal Perera.
 
-## Features
+## Main features
 
-- User signup and login
 - Onboarding screen
-- Find service professionals
-- Search providers
-- Provider categories
-- Provider details
-- Create and manage bookings
+- Local signup and login
+- Provider search and category browsing
+- Paginated provider list with infinite scrolling
+- Loading, empty, error, retry, and refresh states
+- Provider details and availability
+- Booking form with validation
+- Booking cost calculation
+- Saturday surcharge
+- Double-booking prevention
+- Customer booking history
+- Provider job management
 - Customer and provider modes
-- Booking status updates
-- Profile editing
-- Profile image selection
+- Profile editing and profile image
 - Password update
-- Light and dark mode
-- Local data storage with Hive
-- Provider state management with Provider
+- Light and dark themes
+- Hive local storage
+- Provider state management
+- Unit tests
+
+## Technology
+
+- Flutter 3.44.2
+- Dart 3.12.2
+- Provider
+- Hive
+- Lottie
+- Image Picker
 
 ## Requirements
 
-- Flutter
-- Dart
+- Flutter 3.44.2 or later
 - Android Studio or Xcode
-- An Android emulator, iOS simulator, or physical device
+- Android emulator, iOS simulator, or a physical device
 
-## Run the project
+## Getting started
 
-Clone the repository:
+Clone the project:
 
 ```bash
 git clone https://github.com/ruvindu-dulaksha/fixora.git
 cd fixora
 ```
 
-Install the packages:
+Install dependencies:
 
 ```bash
 flutter pub get
@@ -54,33 +66,37 @@ flutter run
 flutter test
 ```
 
-## Check the code
+## Check the project
 
 ```bash
 flutter analyze
 ```
 
-## Main folders
+## Project structure
 
 ```text
 lib/
-  data/       Provider data and repository
-  models/     App data models
-  screen/     App screens
-  state/      Provider state management
+  data/       Repository and provider data loading
+  models/     Booking and provider models
+  screen/     Application screens
+  state/      Provider and Hive application state
   theme/      Light and dark themes
-  utils/      Booking rules
+  utils/      Booking rules and validation
 
 assets/
-  data/       Provider JSON data
-  images/     App images
   animations/ Onboarding animation
+  data/       Provider JSON data
+  images/     App logos and icons
 
 test/         Unit tests
 ```
 
-## Local storage
+## Local data
 
-The app uses Hive to store local user data, settings, profile information, and bookings.
+The app uses Hive for local storage. It saves the local account, login state, theme preference, selected mode, profile image, and bookings on the device.
 
-This is a local demo application. Authentication data is stored locally on the device.
+This project uses local demo authentication and does not connect to a backend.
+
+## iOS photo access
+
+The app can use the device photo library for selecting a profile image. On iOS, allow photo access when the permission prompt appears. If permission was previously denied, enable Photos access for Fixora in the device settings.
