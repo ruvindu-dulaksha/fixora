@@ -22,14 +22,38 @@ class AppState extends ChangeNotifier {
   List<ProviderProfile> providers = [];
   List<Booking> bookings = [];
 
+  String? get providerIdForCurrentAccount {
+    switch (userEmail.trim().toLowerCase()) {
+      case 'ruvindu2@gmail.com':
+        return 'p001';
+      case 'ruvindu1@gmail.com':
+        return 'p002';
+      default:
+        return null;
+    }
+  }
+
+  String? get providerNameForCurrentAccount {
+    switch (providerIdForCurrentAccount) {
+      case 'p001':
+        return 'Kamal Perera';
+      case 'p002':
+        return 'Nuwan Silva';
+      default:
+        return null;
+    }
+  }
+
   Future<void> initialize() async {
     await _createDemoAccountIfNeeded();
+    await _ensureDemoAccounts();
     isAuthenticated = box.get('authenticated') == 'true';
     hasSeenOnboarding = box.get('onboardingSeen') == 'true';
     isProviderMode = box.get('providerMode') == 'true';
     userName = box.get('userName') ?? '';
     userEmail = box.get('userEmail') ?? '';
     userPassword = box.get('userPassword') ?? '';
+    if (providerIdForCurrentAccount == null) isProviderMode = false;
     profileImageBase64 = box.get('profileImage');
     final savedTheme = box.get('theme');
     themeMode = savedTheme == ThemeMode.dark.name
@@ -63,6 +87,38 @@ class AppState extends ChangeNotifier {
         },
       ]),
     });
+  }
+
+  Future<void> _ensureDemoAccounts() async {
+    final accounts = _readAccounts();
+    const demoAccounts = [
+      {
+        'name': 'Ruvindu 1',
+        'email': 'ruvindu1@gmail.com',
+        'password': 'dulaksha',
+      },
+      {
+        'name': 'Ruvindu 2',
+        'email': 'ruvindu2@gmail.com',
+        'password': 'dulaksha',
+      },
+    ];
+    var changed = false;
+    for (final demoAccount in demoAccounts) {
+      final index = accounts.indexWhere(
+        (account) =>
+            account['email']!.toLowerCase() ==
+            demoAccount['email']!.toLowerCase(),
+      );
+      if (index < 0) {
+        accounts.add(Map<String, String>.from(demoAccount));
+        changed = true;
+      } else if (accounts[index]['password'] != demoAccount['password']) {
+        accounts[index]['password'] = demoAccount['password']!;
+        changed = true;
+      }
+    }
+    if (changed) await _saveAccounts(accounts);
   }
 
   List<Map<String, String>> _readAccounts() {
@@ -164,6 +220,7 @@ class AppState extends ChangeNotifier {
     userPassword = account['password']!;
     userName = account['name']!;
     isAuthenticated = true;
+    isProviderMode = false;
     await box.putAll({
       'authenticated': 'true',
       'userName': userName,
@@ -194,6 +251,7 @@ class AppState extends ChangeNotifier {
     userEmail = account['email']!;
     userPassword = account['password']!;
     isAuthenticated = true;
+    isProviderMode = false;
     await box.putAll({
       'authenticated': 'true',
       'userName': userName,
@@ -272,6 +330,7 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> toggleMode() async {
+    if (!isProviderMode && providerIdForCurrentAccount == null) return;
     isProviderMode = !isProviderMode;
     await box.put('providerMode', isProviderMode.toString());
     notifyListeners();

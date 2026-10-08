@@ -11,7 +11,9 @@ class BookingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
     final list = providerMode
-        ? state.bookings.where((b) => b.providerId == 'p001').toList()
+        ? state.bookings
+              .where((b) => b.providerId == state.providerIdForCurrentAccount)
+              .toList()
         : state.bookings;
     final upcoming = list
         .where(
@@ -104,15 +106,15 @@ class BookingsPage extends StatelessWidget {
   Widget _providerActions(BuildContext context, Booking booking) {
     final actions = switch (booking.status) {
       BookingStatus.pending => [
-          (label: 'Accept', status: BookingStatus.confirmed),
-          (label: 'Reject', status: BookingStatus.rejected),
-        ],
+        (label: 'Accept', status: BookingStatus.confirmed),
+        (label: 'Reject', status: BookingStatus.rejected),
+      ],
       BookingStatus.confirmed => [
-          (label: 'Start job', status: BookingStatus.inProgress),
-        ],
+        (label: 'Start job', status: BookingStatus.inProgress),
+      ],
       BookingStatus.inProgress => [
-          (label: 'Mark complete', status: BookingStatus.completed),
-        ],
+        (label: 'Mark complete', status: BookingStatus.completed),
+      ],
       _ => <({String label, BookingStatus status})>[],
     };
     if (actions.isEmpty) return const SizedBox.shrink();

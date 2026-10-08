@@ -325,10 +325,14 @@ class ProfilePage extends StatelessWidget {
           SwitchListTile(
             title: const Text('Provider mode'),
             subtitle: Text(
-              'Manage jobs as ${state.userName.isEmpty ? 'your profile' : state.userName}',
+              state.providerNameForCurrentAccount == null
+                  ? 'No provider account linked'
+                  : 'Manage jobs as ${state.providerNameForCurrentAccount}',
             ),
             value: state.isProviderMode,
-            onChanged: (_) => state.toggleMode(),
+            onChanged: state.providerIdForCurrentAccount == null
+                ? null
+                : (_) => state.toggleMode(),
           ),
           Card(
             child: Padding(
